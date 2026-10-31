@@ -1,0 +1,18 @@
+{% import "_thumbs.html" as st with context %}
+{% macro th(col, label) %}{% set active = sorting.key == col %}{% set nd = (('asc' if sorting.dir == 'desc' else 'desc') if active else ('desc' if col in ('star', 'date') else 'asc')) %}<th{% if col == 'star' %} class="starcol"{% endif %}><a class="sort" href="?{{ request.args.to_dict() | dictupdate(sort=col, dir=nd, page=1) }}" title="Sort by {{ 'your rating (approved first)' if col == 'star' else label }}">{{ label }}{% if active %} <span class="arrow">{{ '▲' if sorting.dir == 'asc' else '▼' }}</span>{% endif %}</a></th>{% endmacro %}
+<div class="table-wrap"><table class="votes">
+<tr>{{ th('star', 'Rating') }}{{ th('date', 'Date') }}{{ th('vote', 'Vote') }}{{ th('bill', 'Bill / question') }}{{ th('result', 'Result') }}{% if member_filter %}{{ th('position', 'Position') }}{{ th('party', 'Party majority') }}{{ th('match', 'Matches you') }}{% endif %}<th>Summary</th></tr>
+{% for v in votes %}{% set r = (v.result or '')|lower %}{% set failed = 'failed' in r or 'rejected' in r or 'not agreed' in r %}{% set passed = not failed and ('passed' in r or 'agreed to' in r or 'confirmed' in r) %}<tr>
+ <td class="starcol">{{ st.thumbs(v) }}</td>
+ <td class="muted nowrap">{{ v.vote_date }}</td>
+ <td class="nowrap"><a href="/vote/{{ v.vote_id }}">{{ v.chamber }} #{{ v.roll_num }}</a></td>
+ <td class="c-bill"><div class="bill-title" title="{{ v.title }}">{% if v.bill_id %}<b>{{ v.bill_id }}</b> – {% endif %}{{ v.title }}</div>
+  <div class="meta">{% if v.policy_area %}<span class="pill">{{ v.policy_area }}</span>{% endif %}<span class="q" title="{{ v.question }}">{{ v.question }}</span></div></td>
+ <td><span class="res {{ 'ok' if passed }}{{ 'fail' if failed }}">{{ v.result }}</span><div class="muted nowrap">{{ v.yeas }}–{{ v.nays }}</div></td>
+ {% if member_filter %}<td><span class="chip {{ v.position.split()[0] }}">{{ v.position }}</span></td>
+ <td>{% if v.party_majority %}<span class="chip {{ v.party_majority }}">{{ v.party_majority }}</span>{% endif %}</td>
+ <td style="text-align:center">{% if v.matches == 1 %}<span class="match-yes" title="Voted the way you want on this bill">&#10003;</span>{% elif v.matches == -1 %}<span class="match-no" title="Voted against what you want on this bill">&#10007;</span>{% endif %}</td>{% endif %}
+ <td class="brief">{% if v.brief %}<div class="clamp" title="{{ 'Plain-English summary written by AI from the bill (you ran Process summary)' if v.brief_source == 'ai' else 'Lead of the Congress Research Service summary on congress.gov' }} - click to expand">{{ v.brief }}</div>{% elif v.bill_id %}<span class="muted" title="No summary available yet (very new bills don't have one). Open the vote and use Process summary.">&mdash;</span>{% endif %}</td>
+</tr>{% else %}<tr><td colspan="9" class="muted">No votes match.</td></tr>{% endfor %}</table></div>
+<div class="pager">{% if page > 1 %}<a class="btn" href="?{{ request.args.to_dict() | dictupdate(page=page-1) }}">&laquo; Newer</a>{% endif %}
+ {% if more %}<a class="btn" href="?{{ request.args.to_dict() | dictupdate(page=page+1) }}">Older &raquo;</a>{% endif %}</div>

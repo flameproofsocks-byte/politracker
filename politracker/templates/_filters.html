@@ -1,0 +1,18 @@
+{#- Shared filter bar for the votes list and a politician's history. `member_filter` adds the Position filter. -#}
+{% set active = request.args.get('q') or request.args.get('chamber') or request.args.get('topic') or request.args.get('position') or request.args.get('since') or request.args.get('scope', 'passage') != 'passage' %}
+<form method="get" class="filters">
+ <input name="q" value="{{ request.args.get('q','') }}" placeholder="Search topic, bill or title">
+ <select name="chamber" title="Chamber"><option value="">Both chambers</option>
+  {% for c in ['House','Senate'] %}<option {{ 'selected' if request.args.get('chamber')==c }}>{{ c }}</option>{% endfor %}</select>
+ {% if topics %}<select name="topic" title="Topic"><option value="">All topics</option>
+  {% for t in topics %}<option {{ 'selected' if request.args.get('topic')==t }}>{{ t }}</option>{% endfor %}</select>{% endif %}
+ <select name="scope" title="Which votes to include">
+  {% for k,l in [('passage','Final passage votes only'),('bills','All votes on bills'),('all','Everything (incl. nominations)')] %}
+  <option value="{{ k }}" {{ 'selected' if request.args.get('scope','passage')==k }}>{{ l }}</option>{% endfor %}</select>
+ {% if member_filter %}<select name="position" title="How they voted"><option value="">Any position</option>
+  {% for p in ['Yea','Nay','Present','Not Voting'] %}<option {{ 'selected' if request.args.get('position')==p }}>{{ p }}</option>{% endfor %}</select>{% endif %}
+ <label>Since <input type="date" name="since" value="{{ request.args.get('since','') }}"></label>
+ {% if request.args.get('sort') %}<input type="hidden" name="sort" value="{{ request.args.get('sort') }}"><input type="hidden" name="dir" value="{{ request.args.get('dir','') }}">{% endif %}
+ <button class="btn btn-primary">Filter</button>
+ {% if active %}<a class="btn btn-ghost" href="{{ request.path }}" title="Remove all filters">Clear</a>{% endif %}
+</form>

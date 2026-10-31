@@ -1,0 +1,11 @@
+{#- Shared politician header (portrait, name, badges) + the Summary | Votes tabs. `active` is 'summary' or 'votes'. -#}
+{% macro header(m, active) %}
+{% set pname = {'D': 'Democrat', 'R': 'Republican', 'I': 'Independent'}.get(m.party, m.party) %}
+{% set photo = photo_url(m.member_id) %}
+<div class="person">
+ {% if photo %}<img class="portrait" src="{{ photo }}" alt="Portrait of {{ m.full_name }}" width="72" height="88" loading="lazy" referrerpolicy="no-referrer">{% endif %}
+ <div><h1>{{ m.full_name }}</h1>
+  <div class="badges"><span class="chip {{ m.party }}">{{ pname }}</span><span class="pill">{{ m.chamber }}</span><span class="where">{{ m.state }}</span></div></div>
+</div>
+<nav class="tabs"><a class="{{ 'on' if active == 'summary' }}" href="/politician/{{ m.member_id }}">Summary</a><a class="{{ 'on' if active == 'votes' }}" href="/member/{{ m.member_id }}">Votes</a></nav>
+{% endmacro %}

@@ -1,0 +1,50 @@
+/* ==========================================================================
+   politracker THEME. This is the ONE file to edit to change the look globally.
+   style.css (structure/layout) uses only the variables below: no hard-coded colours,
+   radii, shadows or fonts live anywhere else. Light "aged paper" theme: cream/tan
+   surfaces, blue as the main accent, a little red as the secondary accent.
+   ========================================================================== */
+:root {
+  color-scheme: light;                      /* native controls (date picker, selects, scrollbars) stay light */
+
+  /* --- Paper: page background, panels, table headers ------------------------------------ */
+  --bg:         #eadfc3;                    /* aged tan page background */
+  --surface:    #f7f0dc;                    /* cream panels / cards / tables */
+  --surface-2:  #efe6cb;                    /* table header rows, subtle bands */
+  --neutral-bg: #e1d5b3;                    /* chips, pills, hover wells */
+  --border:     #cdbf99;                    /* hairlines and outlines */
+
+  /* --- Ink ------------------------------------------------------------------------------ */
+  --text:       #2a2316;                    /* main text: warm near-black */
+  --muted:      #6a5e44;                    /* secondary text */
+  --on-accent:  #fffaf0;                    /* text on a blue/red/green filled button */
+
+  /* --- Main accent: blue (links, primary buttons, active nav, focus rings) ---------------- */
+  --accent:       #1d4d9e;
+  --accent-hover: #153b7c;
+  --accent-weak:  #d5dff0;                  /* light blue wash (active nav, selected row) */
+
+  /* --- Secondary accent: red (brand mark, top rule, Nay, disagree) ------------------------ */
+  --accent-2:      #a8281e;
+  --accent-2-weak: #f0d6cd;
+
+  /* --- Vote meaning ----------------------------------------------------------------------- */
+  --yea:      #2f6a3b;  --yea-bg: #d9e8d0;  /* Yea / passed */
+  --nay:      #a8281e;  --nay-bg: #f0d6cd;  /* Nay / failed */
+  --agree:    #2f7d3b;                      /* your thumbs-up (approve) */
+  --disagree: #b3261e;                      /* your thumbs-down (deny) */
+  --thumb-off: #9e916f;                     /* unrated thumb outline */
+
+  /* --- Parties ----------------------------------------------------------------------------- */
+  --dem: #1d4d9e;   --rep: #a8281e;   --ind: #5f4b9c;
+
+  /* --- Shape and depth: square corners everywhere ------------------------------------------ */
+  --radius:      0;                         /* cards, buttons, inputs, tables. Try 6px to round everything again. */
+  --radius-pill: 0;                         /* chips, pills, bars (was fully round) */
+  --shadow:      0 1px 0 rgba(70, 52, 10, .10);
+  --shadow-pop:  0 6px 18px rgba(70, 52, 10, .22);   /* search suggestions dropdown */
+
+  /* --- Type ---------------------------------------------------------------------------------- */
+  --font-body:    system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-heading: var(--font-body);         /* e.g. Georgia, "Times New Roman", serif for an old-paper feel */
+}

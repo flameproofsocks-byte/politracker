@@ -1,0 +1,69 @@
+{% extends "base.html" %}{% import "_thumbs.html" as th %}{% block title %}My picks &middot; politracker{% endblock %}{% block body %}
+<h1>My picks</h1>
+{% if not p.bills %}
+<div class="card">You haven't rated any bills yet. Give a bill a thumbs up or thumbs down on the <a href="/votes">Votes</a> page:
+ <b class="good">thumbs up</b> = approve (you want it), <b class="bad">thumbs down</b> = deny (you don't want it).
+ This page then shows who votes like you and what you tend to favor or oppose.</div>
+{% else %}
+
+<div class="card">
+ <b>Which party do your picks line up with?</b>
+ {% if p.label %}
+  <div style="font-size:1.25em;margin:.3rem 0"><b>{{ p.label }}</b>
+   <span class="muted" style="font-size:.7em">lean {{ '%+.0f' % p.lean }} (&minus;100 = always sides with Republicans, +100 = with Democrats)</span></div>
+ {% else %}
+  <div style="margin:.3rem 0" class="muted">Not enough data for a lean yet: you need at least {{ min_partisan }} rated bills the parties split on by {{ gap }}+ points (you have {{ p.partisan }}).</div>
+ {% endif %}
+ {% if p.scored %}
+  <div>Democrats voted the way you wanted <b>{{ p.mean_dem }}%</b> of the time on your rated bills
+   <div class="leanbar"><span class="dem" style="width:{{ p.mean_dem }}%"></span></div></div>
+  <div>Republicans voted the way you wanted <b>{{ p.mean_rep }}%</b> of the time
+   <div class="leanbar"><span class="rep" style="width:{{ p.mean_rep }}%"></span></div></div>
+  <div class="muted">On the {{ p.partisan }} of your {{ p.scored }} scored bills where the parties split by {{ gap }}+ points,
+   you sided with Democrats on {{ p.sides.D }}, with Republicans on {{ p.sides.R }}{% if p.sides.tie %}, neither on {{ p.sides.tie }}{% endif %}.
+   Bills both parties voted alike on don't affect the lean.</div>
+ {% endif %}
+ <div class="muted" style="margin-top:.4rem">Based only on the {{ p.bills|length }} bills you rated, using how each party's members actually voted on
+  final passage (both chambers pooled, Yea/Nay only; independents are not counted). It shows who votes like you on <i>these</i> bills, not a verdict on your politics.</div>
+</div>
+
+<div style="display:flex;gap:1rem;flex-wrap:wrap">
+ {% for title, groups, cls in [('You generally favor', p.favor, 'good'), ('You generally oppose', p.oppose, 'bad'), ('You\'re split on', p.mixed, 'muted')] %}
+ {% if groups %}<div class="card" style="flex:1;min-width:280px"><b class="{{ cls }}">{{ title }}</b>
+  {% for t in groups %}<div style="margin-top:.4rem"><b>{{ t.topic }}</b>
+   <span class="muted">({{ t.agree|length }} approved, {{ t.disagree|length }} denied)</span>
+   <ul style="margin:.2rem 0 0 1.1rem;padding:0">
+   {% for b in t.agree + t.disagree %}<li><span class="thumb-static {{ 'up' if b.stance == 'agree' else 'down' }}" title="You {{ 'approve' if b.stance == 'agree' else 'deny' }} this bill">{{ th.icon() }}</span> {% if b.vote_id %}<a href="/vote/{{ b.vote_id }}">{{ b.bill_id }}</a>{% else %}{{ b.bill_id }}{% endif %}{% if b.title %} &ndash; {{ b.title[:90] }}{{ '…' if b.title|length > 90 }}{% endif %}</li>{% endfor %}
+   </ul></div>{% endfor %}</div>{% endif %}
+ {% endfor %}
+</div>
+{% if not p.favor and not p.oppose and not p.mixed %}<p class="muted">No topics yet (topics need the Congress.gov bill details: run <code>python -m politracker bills</code>).</p>{% endif %}
+
+<h3>Your rated bills</h3>
+<div class="table-wrap"><table>
+ <tr><th>Your pick</th><th>Bill</th><th>Topic</th><th>Dem Yea</th><th>Rep Yea</th><th>You side with</th><th>Summary</th></tr>
+ {% for b in p.bills %}<tr>
+  <td><span class="seg" data-congress="{{ b.congress }}" data-bill="{{ b.bill_id }}">
+   <button class="agree {{ 'on' if b.stance == 'agree' }}" data-to="agree" title="You approve of this bill">Approve</button><button class="disagree {{ 'on' if b.stance == 'disagree' }}" data-to="disagree" title="You deny this bill">Deny</button><button data-to="none" title="Stop tracking this bill">Remove</button></span></td>
+  <td>{% if b.vote_id %}<a href="/vote/{{ b.vote_id }}"><b>{{ b.bill_id }}</b></a>{% else %}<b>{{ b.bill_id }}</b>{% endif %}{% if b.title %} &ndash; {{ b.title }}{% endif %}
+   {% if b.date %}<div class="muted">{{ b.date }}</div>{% endif %}</td>
+  <td>{% if b.topic %}<span class="pill">{{ b.topic }}</span>{% endif %}</td>
+  <td>{% if b.dem_yea is not none %}{{ (b.dem_yea * 100)|round|int }}%{% else %}<span class="muted">n/a</span>{% endif %}</td>
+  <td>{% if b.rep_yea is not none %}{{ (b.rep_yea * 100)|round|int }}%{% else %}<span class="muted">n/a</span>{% endif %}</td>
+  <td>{% if b.side == 'D' %}<span class="D"><b>Democrats</b></span>{% elif b.side == 'R' %}<span class="R"><b>Republicans</b></span>{% elif b.side == 'tie' %}neither{% elif b.dem_yea is not none %}<span class="muted">both alike</span>{% else %}<span class="muted">no party data</span>{% endif %}</td>
+  <td class="brief">{% if b.brief %}{{ b.brief }}{% else %}<span class="muted">&mdash;</span>{% endif %}</td>
+ </tr>{% endfor %}
+</table></div>
+<script>
+// Set a pick directly, then reload so the lean and topic lists are recomputed.
+document.querySelectorAll('.seg button').forEach(function (btn) {
+  btn.addEventListener('click', async function () {
+    const seg = btn.closest('.seg');
+    const r = await fetch('/bill/' + seg.dataset.congress + '/' + encodeURIComponent(seg.dataset.bill) + '/star?to=' + btn.dataset.to,
+                          {method: 'POST', headers: {'X-Politracker': '1'}});
+    if (r.ok) location.reload();
+  });
+});
+</script>
+{% endif %}
+{% endblock %}

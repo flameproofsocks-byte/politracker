@@ -1,0 +1,3 @@
+{% extends "base.html" %}{% block title %}Votes &middot; politracker{% endblock %}{% block body %}<h1>Votes</h1>
+<div class="muted">Click a column to sort. Give a bill a thumbs up (approve) or thumbs down (deny); click the same thumb again to clear it. Click a summary to expand it.</div>
+{% set member_filter = false %}{% include "_filters.html" %}{% include "_votes_table.html" %}{% endblock %}

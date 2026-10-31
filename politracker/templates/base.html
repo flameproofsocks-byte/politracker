@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}politracker{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='theme.css') }}">   {# colours, radius, shadows, fonts: edit THIS to re-theme #}
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">   {# layout only; uses the theme's variables #}
+</head><body>
+<header class="topbar"><div class="topbar-inner">
+ <a class="brand" href="/">poli<span>tracker</span></a>
+ <a class="nav {{ 'active' if request.path == '/' }}" href="/">Politicians</a>
+ <a class="nav {{ 'active' if request.path == '/votes' or request.path.startswith('/vote/') }}" href="/votes">Votes</a>
+ <a class="nav {{ 'active' if request.path == '/top' }}" href="/top">Top bills</a>
+ <a class="nav {{ 'active' if request.path == '/videos' or request.path.startswith('/videos/') }}" href="/videos">Videos</a>
+ <a class="nav {{ 'active' if request.path == '/mine' }}" href="/mine">My picks{% if stances %} <span class="pill">{{ stances|length }}</span>{% endif %}</a>
+</div></header>
+<main class="page">
+{% block body %}{% endblock %}
+</main>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body></html>

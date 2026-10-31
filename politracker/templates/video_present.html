@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ f.name }} &middot; video presenter</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='theme.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='present.css') }}">
+</head>
+<body class="{{ 'clean ' if clean }}{{ 'freeze' if freeze }}" data-start="{{ start }}" data-auto="{{ 1 if auto and not freeze else 0 }}" data-loop="{{ 1 if loop else 0 }}">
+<div id="stage">
+ <div class="progress">{% for s in scenes %}<i style="--dur: {{ s.seconds }}s"></i>{% endfor %}</div>
+ {% for s in scenes %}
+ <section class="scene {{ s.kind }}" data-seconds="{{ s.seconds }}" data-kind="{{ s.kind }}">
+  {% if s.kind == 'hook' %}
+   <div class="pad"><div class="kicker">{{ f.name }}</div><h1>{{ s.text }}</h1></div>
+  {% elif s.kind == 'who' %}
+   <div class="pad center">{% if f.photo %}<img class="mug" src="{{ f.photo }}" alt="" referrerpolicy="no-referrer">{% endif %}
+    <h2>{{ f.name }}</h2>
+    <div class="line">{{ f.party_adj }} &middot; {{ 'Senator' if f.chamber == 'Senate' else 'Representative' }} &middot; {{ f.state }}</div>
+    {% if f.since_year %}<div class="since">{{ 'In Congress since' if f.current else 'In Congress from' }} <b>{{ f.since_year }}</b>{% if not f.current and f.left_year %} to <b>{{ f.left_year }}</b>{% endif %}</div>
+    {% if f.service %}<div class="since small">{{ f.service }}</div>{% endif %}{% endif %}</div>
+  {% elif s.kind == 'stats' %}
+   <div class="pad">
+    {% if f.party_pct is not none %}<div class="bignum"><b>{{ f.party_pct }}%</b><span>of votes with the {{ f.party_cmp }}</span></div>{% endif %}
+    {% if f.participation is not none %}<div class="bignum alt"><b>{{ f.participation }}%</b><span>of roll calls voted on</span></div>{% endif %}</div>
+  {% elif s.kind in ('for', 'against') %}
+   <div class="pad"><div class="label">{{ 'Voted for' if s.kind == 'for' else 'Voted against' }}</div>
+    {% for b in s.bills %}<div class="billcard"><div class="row"><b class="bid">{{ b.bill_id }}</b><span class="tally">{{ b.tally }}</span></div>
+     <div class="btitle">{{ b.title }}</div>{% if b.topic %}<span class="pill">{{ b.topic }}</span>{% endif %}</div>{% endfor %}</div>
+  {% elif s.kind == 'stands' %}
+   <div class="pad">
+    {% if s.supports %}{% set mx = s.supports|map(attribute=1)|max %}<div class="label">Mostly votes yea on</div>
+     {% for t, n in s.supports %}<div class="barrow"><span>{{ t }}</span><div class="bar"><i style="width: {{ (n / mx * 100)|round|int }}%"></i></div><em>{{ n }}</em></div>{% endfor %}{% endif %}
+    {% if s.opposes %}{% set mx2 = s.opposes|map(attribute=1)|max %}<div class="label no">Mostly votes nay on</div>
+     {% for t, n in s.opposes %}<div class="barrow no"><span>{{ t }}</span><div class="bar"><i style="width: {{ (n / mx2 * 100)|round|int }}%"></i></div><em>{{ n }}</em></div>{% endfor %}{% endif %}</div>
+  {% elif s.kind == 'outro' %}
+   <div class="pad center"><h1>{{ s.text }}</h1></div>
+  {% endif %}
+ </section>
+ {% endfor %}
+ <div class="foot">Source: House &amp; Senate roll-call votes{% if f.data_through_text %} &middot; through {{ f.data_through_text }}{% endif %}</div>
+</div>
+<div class="controls" role="toolbar" aria-label="Presenter controls">
+ <button id="prev" title="Previous (left arrow)">&lsaquo;</button><button id="play" title="Play / pause (space)">Pause</button><button id="next" title="Next (right arrow)">&rsaquo;</button>
+ <button id="restart" title="Restart (R)">Restart</button>
+ <span id="where">1 / {{ scenes|length }}</span><span class="hint">{{ total }}s &middot; keys: &larr; &rarr; space R F, C hides controls</span>
+ <a href="/videos/{{ f.member_id }}">Edit</a>
+</div>
+<script src="{{ url_for('static', filename='present.js') }}"></script>
+</body></html>

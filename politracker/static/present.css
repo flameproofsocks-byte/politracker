@@ -1,0 +1,64 @@
+/* Vertical (9:16) video presenter. Logical size is 1080x1920; present.js scales the stage to fit the window.
+   Colours/fonts/radius come from theme.css variables only (no hard-coded values). */
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--text); font-family: var(--font-body); }
+#stage { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; transform-origin: top left; overflow: hidden; background: var(--bg); color: var(--text); }
+.scene { position: absolute; inset: 0; opacity: 0; transform: translateY(48px); transition: opacity .35s ease, transform .35s ease; pointer-events: none; display: flex; }
+.scene.on { opacity: 1; transform: none; }
+.freeze .scene, .freeze .progress i::after { transition: none; animation: none; }
+.pad { padding: 170px 90px 150px; width: 100%; display: flex; flex-direction: column; justify-content: center; gap: 48px; }
+.pad.center { align-items: center; text-align: center; }
+h1, h2 { font-family: var(--font-heading); margin: 0; line-height: 1.04; letter-spacing: -.02em; }
+h1 { font-size: 128px; } h2 { font-size: 112px; }
+.kicker { font-size: 44px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; opacity: .85; }
+.label { font-size: 56px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; padding-bottom: 8px; border-bottom: 10px solid currentColor; align-self: flex-start; }
+
+/* slide colours: blue hook, tan intro, cream numbers, green/red vote slides, red outro */
+.hook { background: var(--accent); color: var(--on-accent); }
+.who { background: var(--bg); }
+.stats { background: var(--surface); }
+.for { background: var(--yea-bg); color: var(--yea); }
+.against { background: var(--nay-bg); color: var(--nay); }
+.stands { background: var(--bg); }
+.outro { background: var(--accent-2); color: var(--on-accent); }
+
+.mug { width: 440px; height: 540px; object-fit: cover; border: 12px solid var(--surface); box-shadow: var(--shadow-pop); background: var(--neutral-bg); }
+.line { font-size: 52px; font-weight: 700; color: var(--accent); }
+.since { font-size: 60px; } .since.small { font-size: 44px; color: var(--muted); }
+.bignum { display: flex; flex-direction: column; gap: 6px; }
+.bignum b { font-size: 300px; line-height: 1; letter-spacing: -.04em; color: var(--accent); }
+.bignum.alt b { color: var(--accent-2); }
+.bignum span { font-size: 58px; font-weight: 700; }
+
+.billcard { background: var(--surface); color: var(--text); border: 6px solid currentColor; padding: 36px 40px; display: flex; flex-direction: column; gap: 16px; box-shadow: var(--shadow); }
+.billcard .row { display: flex; justify-content: space-between; align-items: baseline; }
+.billcard .bid { font-size: 52px; color: var(--accent); } .billcard .tally { font-size: 52px; font-weight: 800; }
+.billcard .btitle { font-size: 56px; font-weight: 700; line-height: 1.12; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.pill { align-self: flex-start; font-size: 34px; font-weight: 700; padding: 6px 20px; background: var(--neutral-bg); color: var(--muted); }
+.for .billcard { border-color: var(--yea); } .against .billcard { border-color: var(--nay); }
+
+.stands .label { color: var(--accent); } .stands .label.no { color: var(--accent-2); margin-top: 40px; }
+.barrow { display: grid; grid-template-columns: 1fr 90px; grid-template-areas: "t n" "b b"; gap: 8px 20px; align-items: baseline; }
+.barrow span { grid-area: t; font-size: 58px; font-weight: 800; } .barrow em { grid-area: n; font-size: 52px; font-style: normal; font-weight: 800; text-align: right; }
+.barrow .bar { grid-area: b; height: 38px; background: var(--neutral-bg); }
+.barrow .bar i { display: block; height: 100%; background: var(--accent); } .barrow.no .bar i { background: var(--accent-2); }
+
+.foot { position: absolute; left: 0; right: 0; bottom: 56px; text-align: center; font-size: 30px; font-weight: 600; opacity: .75; color: var(--text); z-index: 4; white-space: nowrap; }
+#stage[data-kind="hook"] .foot, #stage[data-kind="outro"] .foot { color: var(--on-accent); }   /* light text on the blue / red slides */
+.progress { position: absolute; top: 56px; left: 70px; right: 70px; display: flex; gap: 14px; z-index: 6; }
+.progress i { flex: 1; height: 12px; background: var(--neutral-bg); opacity: .9; overflow: hidden; }
+.progress i::after { content: ""; display: block; height: 100%; width: 0; background: var(--accent-2); }
+.progress i.done::after { width: 100%; }
+.progress i.active::after { animation: fill var(--dur) linear forwards; }
+.paused .progress i.active::after { animation-play-state: paused; }
+@keyframes fill { from { width: 0; } to { width: 100%; } }
+
+/* controls (outside the scaled stage); `?clean=1` or the C key hides them and the progress bar for clean recordings */
+.controls { position: fixed; left: 50%; bottom: 12px; transform: translateX(-50%); display: flex; gap: 8px; align-items: center; padding: 6px 10px;
+  background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-pop); font-size: 14px; color: var(--text); z-index: 20; }
+.controls button { font: inherit; font-weight: 700; padding: 4px 12px; border: 1px solid var(--border); background: var(--bg); color: var(--text); cursor: pointer; border-radius: var(--radius); }
+.controls button:hover { background: var(--neutral-bg); } .controls .hint { color: var(--muted); } .controls a { color: var(--accent); }
+.controls { white-space: nowrap; max-width: calc(100vw - 16px); }
+@media (max-width: 760px) { .controls .hint { display: none; } }
+.clean .controls, .clean .progress { display: none; }
+.clean { cursor: none; }

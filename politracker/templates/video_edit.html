@@ -1,0 +1,60 @@
+{% extends "base.html" %}{% block title %}Video: {{ m.full_name }} &middot; politracker{% endblock %}{% block body %}
+{% macro picker(side, label, cands, chosen) %}
+<div class="card"><h3>{{ label }} <span class="muted" style="font-size:.85rem;font-weight:400">(feature up to {{ max_picks }}; most interesting first)</span></h3>
+ {% for v in cands %}<label class="pick"><input type="checkbox" data-side="{{ side }}" value="{{ v.key }}" {{ 'checked' if v.key in chosen }}>
+  <span><b>{{ v.bill_id }}</b> {{ v.title }}<span class="muted"> &middot; {{ v.tally }} &middot; {{ v.vote_date }}</span>
+  {% if v.topic %}<span class="pill">{{ v.topic }}</span>{% endif %}</span></label>
+ {% else %}<p class="muted">No recorded final-passage votes this way.</p>{% endfor %}</div>
+{% endmacro %}
+<div class="person">
+ {% if f.photo %}<img class="portrait" src="{{ f.photo }}" alt="Portrait of {{ f.name }}" width="72" height="88" referrerpolicy="no-referrer">{% endif %}
+ <div><div class="muted"><a href="/videos">&larr; All videos</a> &middot; <a href="/politician/{{ m.member_id }}">{{ f.name }}'s summary page</a></div>
+  <h1>Video brief: {{ f.name }}</h1>
+  <div class="badges"><span class="chip {{ m.party }}">{{ f.party_adj }}</span><span class="pill">{{ m.chamber }}</span><span class="where">{{ m.state }}</span></div></div>
+</div>
+
+<div id="video-app" class="card actions" data-member="{{ m.member_id }}" data-wps="{{ wps }}" data-lo="{{ target[0] }}" data-hi="{{ target[1] }}" data-max="{{ max_picks }}">
+ <button id="save" class="btn btn-primary">Save</button><span id="save-status" class="muted" role="status"></span>
+ <span class="spacer"></span>
+ <span class="muted">{{ scenes|length }} slides &middot; {{ scene_total }}s on screen</span>
+ <a class="btn" href="/videos/{{ m.member_id }}/present" target="_blank" rel="noopener">Open presenter</a>
+ <a class="btn" id="frames" href="/videos/{{ m.member_id }}/frames.zip" title="Every slide as a 1080x1920 PNG (needs Chromium on this machine). Takes about 20 seconds.">Download slide images</a>
+</div>
+
+<div class="grid2">
+ <div>
+  <div class="card"><h3>Blurb <span class="muted" style="font-size:.85rem;font-weight:400">the facts, from recorded votes</span></h3>
+   <textarea id="blurb" rows="7" maxlength="{{ limits.blurb }}" aria-label="Blurb">{{ blurb }}</textarea>
+   <div class="actions"><button id="rebuild" class="btn" type="button">Rebuild from the bills I've ticked</button>
+    <span class="muted">Replaces the text above with a fresh factual blurb.</span></div></div>
+
+  <div class="card"><h3>Script <span class="muted" style="font-size:.85rem;font-weight:400">your narration, in your own tone</span></h3>
+   <textarea id="script" rows="10" maxlength="{{ limits.script }}" placeholder="Paste or write the script here. One line per beat works well." aria-label="Script">{{ script }}</textarea>
+   <div class="meter-row"><div class="meter" data-lo="{{ target[0] }}" data-hi="{{ target[1] }}"><i class="band"></i><span id="meter-fill"></span></div>
+    <div id="meter-text" class="muted" aria-live="polite"></div></div>
+   <div class="actions"><button id="outline" class="btn" type="button">Insert a starter outline</button>
+    <span class="muted">A neutral, factual draft in the usual hook &rarr; votes &rarr; stands-for order. Add the punch yourself.</span></div></div>
+
+  <div class="card"><h3>Slide text</h3>
+   <label class="field">First slide <input id="hook" maxlength="{{ limits.hook }}" value="{{ hook }}" placeholder="How does {{ f.name }} actually vote?"></label>
+   <label class="field">Last slide <input id="outro" maxlength="{{ limits.outro }}" value="{{ outro }}" placeholder="Check the record before you decide."></label>
+   <p class="muted" style="margin:.4rem 0 0">All other slides are built from the votes you pick on the right. Slide order: {% for s in scenes %}{{ {'hook': 'hook', 'who': 'who', 'stats': 'numbers', 'for': 'voted for', 'against': 'voted against', 'stands': 'stands for', 'outro': 'outro'}[s.kind] }} ({{ s.seconds }}s){{ ' &rarr; '|safe if not loop.last }}{% endfor %}.</p></div>
+ </div>
+
+ <div>
+  <div class="card"><h3>The facts</h3>
+   <dl class="facts" style="grid-template-columns:8.5rem 1fr">
+    {% if f.office %}<dt>Office</dt><dd>{{ f.office }}</dd>{% else %}<dt>Status</dt><dd>Former member</dd>{% endif %}
+    {% if f.since_year %}<dt>In Congress</dt><dd>since {{ f.since_year }}{% if f.service %} ({{ f.service }}){% endif %}</dd>{% endif %}
+    {% if f.party_pct is not none %}<dt>With party</dt><dd>{{ f.party_pct }}% of {{ '{:,}'.format(f.party_n) }} Yea/Nay votes (the {{ f.party_cmp }})</dd>{% endif %}
+    {% if f.participation is not none %}<dt>Votes cast</dt><dd>{{ f.participation }}% of roll calls</dd>{% endif %}
+    <dt>Bill votes</dt><dd>{{ f.n_votes }} final-passage votes{% if f.data_through %}, through {{ f.data_through }}{% endif %}</dd>
+    {% if f.supports %}<dt>Mostly Yea on</dt><dd>{% for t, n in f.supports %}{{ t }} ({{ n }}){{ ', ' if not loop.last }}{% endfor %}</dd>{% endif %}
+    {% if f.opposes %}<dt>Mostly Nay on</dt><dd>{% for t, n in f.opposes %}{{ t }} ({{ n }}){{ ', ' if not loop.last }}{% endfor %}</dd>{% endif %}
+   </dl></div>
+  {{ picker('for', 'Voted for', f.for_candidates, for_keys) }}
+  {{ picker('against', 'Voted against', f.against_candidates, against_keys) }}
+ </div>
+</div>
+<script src="{{ url_for('static', filename='video.js') }}"></script>
+{% endblock %}

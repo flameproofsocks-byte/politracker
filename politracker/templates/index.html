@@ -1,0 +1,63 @@
+{% extends "base.html" %}{% block title %}politracker{% endblock %}{% block body %}
+{% macro fchip(key, val, label) %}{% set on = request.args.get(key) == val %}<a class="fchip {{ 'on' if on }}" href="?{{ request.args.to_dict() | dictupdate(**{key: ('' if on else val)}) }}">{{ label }}</a>{% endmacro %}
+<section class="hero">
+ <h1>How did they actually vote?</h1>
+ <p>Search a senator or representative to see their real votes, how often they side with their party, and how they line up with you.</p>
+ <form method="get" class="search" autocomplete="off">
+  <input name="member" value="{{ name }}" placeholder="Start typing a name, e.g. Cantwell" data-suggest="suggest" autofocus aria-label="Politician name">
+  {% for k in ['chamber', 'party', 'state'] %}{% if request.args.get(k) %}<input type="hidden" name="{{ k }}" value="{{ request.args.get(k) }}">{% endif %}{% endfor %}
+  <button class="btn btn-primary">Find</button>
+  <div id="suggest" class="suggest" hidden></div>
+ </form>
+ <div class="quick">
+  <span class="chips"><span class="lab">Chamber</span>{{ fchip('chamber', 'House', 'House') }}{{ fchip('chamber', 'Senate', 'Senate') }}</span>
+  <span class="chips"><span class="lab">Party</span>{{ fchip('party', 'D', 'Democrats') }}{{ fchip('party', 'R', 'Republicans') }}{{ fchip('party', 'I', 'Independents') }}</span>
+  <form method="get" class="chips" style="margin:0">
+   <span class="lab">State</span>
+   {% for k in ['member', 'chamber', 'party'] %}{% if request.args.get(k) %}<input type="hidden" name="{{ k }}" value="{{ request.args.get(k) }}">{% endif %}{% endfor %}
+   <select name="state" onchange="this.form.submit()" aria-label="State"><option value="">All states</option>
+    {% for s in states %}<option {{ 'selected' if request.args.get('state') == s }}>{{ s }}</option>{% endfor %}</select>
+  </form>
+  {% if filtered %}<a class="btn btn-ghost" href="/">Clear</a>{% endif %}
+ </div>
+</section>
+
+{% if filtered %}
+<h2>{{ members|length }}{{ '+' if members|length >= limit }} politician{{ '' if members|length == 1 else 's' }}</h2>
+<div class="table-wrap"><table>
+ <tr><th>Name</th><th>Party</th><th>State</th><th>Chamber</th></tr>
+ {% for m in members %}<tr><td><a href="/politician/{{ m.member_id }}"><b>{{ m.full_name }}</b></a></td>
+  <td><span class="chip {{ m.party }}">{{ m.party }}</span></td><td>{{ m.state }}</td><td>{{ m.chamber }}</td></tr>
+ {% else %}<tr><td colspan="4" class="muted">No politicians match those filters.</td></tr>{% endfor %}
+</table></div>
+{% if members|length >= limit %}<p class="muted">Showing the first {{ limit }}; narrow it down with the filters above.</p>{% endif %}
+{% else %}
+<div class="grid2">
+ <div class="card recent"><h3>Latest final votes</h3>
+  {% for v in recent %}{% set r = (v.result or '')|lower %}{% set failed = 'failed' in r or 'rejected' in r or 'not agreed' in r %}{% set passed = not failed and ('passed' in r or 'agreed to' in r or 'confirmed' in r) %}
+  <a class="row" href="/vote/{{ v.vote_id }}">
+   <div class="top"><span class="muted nowrap">{{ v.vote_date }}</span><span class="pill">{{ v.chamber }}</span>
+    <b>{% if v.bill_id %}{{ v.bill_id }}{% endif %}</b><span class="res {{ 'ok' if passed }}{{ 'fail' if failed }}">{{ v.result }} {{ v.yeas }}&ndash;{{ v.nays }}</span></div>
+   <div>{{ v.title }}</div>
+   {% if v.brief %}<div class="brief-line">{{ v.brief }}</div>{% endif %}
+  </a>{% endfor %}
+  <div style="margin-top:.6rem"><a class="btn" href="/votes">Browse all votes &rarr;</a></div>
+ </div>
+ <div class="card"><h3>Your lean</h3>
+  {% if not stances %}
+   <p class="muted">Give bills a thumbs up (approve) or thumbs down (deny) on the <a href="/votes">Votes</a> page and this card shows which party votes like you.</p>
+  {% else %}
+   {% if prof.label %}<div class="lean-title">{{ prof.label }}</div>
+   {% else %}<div class="muted">Not enough rated, party-splitting bills for a lean yet.</div>{% endif %}
+   {% if prof.scored %}
+    <div class="muted">Democrats voted your way {{ prof.mean_dem }}%</div><div class="leanbar"><span class="dem" style="width:{{ prof.mean_dem }}%"></span></div>
+    <div class="muted">Republicans voted your way {{ prof.mean_rep }}%</div><div class="leanbar"><span class="rep" style="width:{{ prof.mean_rep }}%"></span></div>
+   {% endif %}
+   <p class="muted">Based on {{ stances|length }} rated bill{{ '' if stances|length == 1 else 's' }}.</p>
+   <a class="btn" href="/mine">See my picks &rarr;</a>
+  {% endif %}
+ </div>
+</div>
+<p class="muted">{{ stats.v }} roll call votes &middot; {{ stats.m }} members &middot; {{ stats.lo }} &rarr; {{ stats.hi }}</p>
+{% endif %}
+{% endblock %}

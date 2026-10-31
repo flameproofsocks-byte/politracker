@@ -1,0 +1,39 @@
+{% extends "base.html" %}{% block title %}{{ v.bill_id or v.title }} &middot; politracker{% endblock %}{% block body %}
+{% import "_thumbs.html" as st with context %}<h1>{{ st.thumbs(v) }}{% if v.bill_id %}{{ v.bill_id }} – {% endif %}{{ v.title }}</h1>
+<p>{{ v.chamber }} roll call #{{ v.roll_num }} · {{ v.vote_date }} · {{ v.question }}<br>
+<b>{{ v.result }}</b> ({{ v.yeas }} yea, {{ v.nays }} nay, {{ v.present }} present, {{ v.not_voting }} not voting)
+ · <a href="{{ v.source_url }}">source</a></p>
+{% if v.bill_title %}<div class="card"><b>Bill details</b> (Congress.gov)<br>
+ {{ v.bill_title }}<br>
+ {% if v.policy_area %}Topic: <span class="pill">{{ v.policy_area }}</span> · {% endif %}
+ {% if v.sponsor_name %}Sponsor: {% if v.sponsor_id %}<a href="/politician/{{ v.sponsor_id }}">{{ v.sponsor_name }}</a>{% else %}{{ v.sponsor_name }}{% endif %} · {% endif %}
+ {% if v.introduced_date %}Introduced {{ v.introduced_date }} · {% endif %}
+ {% if v.became_law %}<b>Became law</b> (P.L. {{ v.law_number }}){% elif v.latest_action_text %}Latest: {{ v.latest_action_date }} – {{ v.latest_action_text }}{% endif %}
+ · <a href="{{ v.bill_url }}">congress.gov</a></div>{% endif %}
+{% if v.bill_id %}<div class="card" id="sumbox">
+ <b>Plain-English summary</b> <span class="muted" id="sumsrc">{% if summary %}(from {{ summary.source }}{{ ', cut for length' if summary.truncated }}; AI-written by {{ summary.model }}){% endif %}</span><br>
+ <div id="sumtext" style="white-space:pre-wrap;margin:.4rem 0">{{ summary.summary if summary }}</div>
+ <button class="btn btn-primary" id="sumbtn" {% if summary %}hidden{% endif %}>Process summary</button>
+ <span class="muted" id="sumstatus"></span>
+</div>
+<script>
+document.getElementById('sumbtn').onclick = async function () {
+  const btn = this, st = document.getElementById('sumstatus');
+  btn.disabled = true; st.textContent = 'Reading the bill and summarizing… (10–60 s)';
+  try {
+    const r = await fetch({{ ('/bill/%d/%s/summary' % (v.congress, v.bill_id|urlencode)) | tojson }},
+                          {method: 'POST', headers: {'X-Politracker': '1'}});
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || r.statusText);
+    document.getElementById('sumtext').textContent = d.summary;
+    document.getElementById('sumsrc').textContent = '(from ' + d.source + (d.truncated ? ', cut for length' : '') + '; AI-written by ' + d.model + ')';
+    btn.hidden = true; st.textContent = '';
+  } catch (e) { st.textContent = 'Failed: ' + e.message; btn.disabled = false; }
+};
+</script>{% endif %}
+<h3>By party</h3><div class="table-wrap"><table><tr><th>Party</th><th>Position</th><th>Count</th></tr>
+{% for r in by_party %}<tr><td class="{{ r.party }}">{{ r.party }}</td><td><span class="chip {{ r.position.split()[0] }}">{{ r.position }}</span></td><td>{{ r.n }}</td></tr>{% endfor %}</table></div>
+<h3>Every member</h3><div class="table-wrap"><table><tr><th>Member</th><th>Party</th><th>State</th><th>Position</th></tr>
+{% for b in ballots %}<tr><td><a href="/politician/{{ b.member_id }}">{{ b.full_name }}</a></td><td class="{{ b.party }}">{{ b.party }}</td>
+<td>{{ b.state }}</td><td><span class="chip {{ b.position.split()[0] }}">{{ b.position }}</span></td></tr>{% endfor %}</table></div>
+{% endblock %}

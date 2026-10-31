@@ -1,0 +1,72 @@
+{% extends "base.html" %}{% import "_person.html" as person %}
+{% block title %}{{ m.full_name }} &middot; politracker{% endblock %}{% block body %}
+{{ person.header(m, 'summary') }}
+
+<div class="stats">
+ <div class="stat"><b>With their party:</b>
+  {% if party.all.pct is not none %}<span class="big">{{ party.all.pct }}%</span>
+   <span class="muted">of their {{ '{:,}'.format(party.all.n) }} Yea/Nay votes went the way most of
+   {% if cmp_letter %}the {{ 'Democrats' if cmp_letter == 'D' else 'Republicans' }} (the party they caucus with){% else %}their own party{% endif %} voted</span>
+   {% if party.passage.pct is not none %}<div class="muted">On final passage votes only: <b>{{ party.passage.pct }}%</b> ({{ '{:,}'.format(party.passage.n) }} votes)</div>{% endif %}
+  {% else %}<span class="muted">n/a</span>{% endif %}</div>
+ <div class="stat"><b>With your picks:</b>
+  {% if picks.pct is not none %}<span class="big">{{ picks.pct }}%</span> <span class="muted">voted the way you want on {{ picks.matched }} of {{ picks.scored }} rated bills they cast a Yea/Nay vote on ({{ picks.rated }} rated in total; procedural votes aren't scored)</span>
+   <div><a href="/member/{{ m.member_id }}?scope=bills&amp;sort=match&amp;dir=desc">See which votes match &rarr;</a></div>
+  {% elif picks.rated %}<span class="muted">none of your {{ picks.rated }} rated bills has a scored Yea/Nay vote by {{ m.full_name }} (other chamber, voice vote, or not in office then)</span>
+  {% else %}<span class="muted">give bills a thumbs up (approve) or thumbs down (deny) on the <a href="/votes">Votes</a> page and this fills in</span>{% endif %}</div>
+ <div class="stat"><b>Showed up to vote:</b>
+  {% if part.pct is not none %}<span class="big">{{ part.pct }}%</span> <span class="muted">voted on {{ '{:,}'.format(part.cast) }} of {{ '{:,}'.format(part.total) }} roll calls (missed {{ '{:,}'.format(part.missed) }})</span>{% else %}<span class="muted">n/a</span>{% endif %}</div>
+</div>
+<p class="muted">Vote statistics cover the {{ '{:,}'.format(part.total) }} roll calls we have for {{ m.full_name }}{% if span.lo %}, {{ span.lo }} to {{ span.hi }}{% endif %}.
+ Voice votes and unanimous-consent votes have no individual record and aren't included.</p>
+
+<div class="grid2">
+ <div>
+  {% if wiki and wiki.extract %}
+  <div class="card"><h3>About</h3>
+   {% if wiki.description %}<div class="muted" style="margin-bottom:.4rem">{{ wiki.description }}</div>{% endif %}
+   <p class="wiki-extract">{{ wiki.extract }}</p>
+   <div class="attrib">From <a href="{{ wiki.url or '#' }}">Wikipedia</a> (text available under CC BY-SA 4.0).</div></div>
+  {% elif bio and bio.wikipedia_title %}
+  <div class="card"><h3>About</h3><p class="muted">The Wikipedia summary couldn't be loaded right now (offline or blocked). Reload to try again; the facts below come from local data.</p></div>
+  {% endif %}
+
+  <div class="card"><h3>At a glance</h3>
+   <dl class="facts">
+    <dt>Party</dt><dd>{{ facts.party }}</dd>
+    {% if facts.office %}<dt>Current office</dt><dd>{{ facts.office }}</dd>
+     {% if facts.since %}<dt>In this role since</dt><dd>{{ facts.since }}</dd>{% endif %}
+     {% if facts.term_end %}<dt>Current term ends</dt><dd>{{ facts.term_end }}</dd>{% endif %}
+    {% elif facts.left_office %}<dt>Status</dt><dd>Former member (left office {{ facts.left_office }})</dd>{% endif %}
+    {% if facts.service %}<dt>Time in Congress</dt><dd>{{ facts.service }}</dd>{% endif %}
+    {% if facts.born %}<dt>Born</dt><dd>{{ facts.born }}{% if facts.age is not none %} (age {{ facts.age }}){% endif %}{% if facts.birth_place %} in {{ facts.birth_place }}{% endif %}</dd>{% endif %}
+    {% if facts.died %}<dt>Died</dt><dd>{{ facts.died }}{% if facts.age_at_death is not none %} (aged {{ facts.age_at_death }}){% endif %}</dd>{% endif %}
+    {% if facts.education %}<dt>Education</dt><dd>{{ facts.education|join('; ') }}</dd>{% endif %}
+    {% if facts.occupations %}<dt>Occupation</dt><dd>{{ facts.occupations|join(', ') }}</dd>{% endif %}
+   </dl>
+   {% if facts.birth_place or facts.education or facts.occupations or facts.died %}<div class="attrib" style="margin-top:.6rem">Birthplace, education, occupation and death date come from <a href="https://www.wikidata.org/">Wikidata</a> and can be incomplete. Terms, dates and links come from <a href="https://github.com/unitedstates/congress-legislators">congress-legislators</a>.</div>{% endif %}</div>
+
+  {% if facts.timeline %}<div class="card"><h3>Service in Congress</h3>
+   <table class="timeline">{% for t in facts.timeline|reverse %}<tr><td class="nowrap">{{ t.years }}</td><td>{{ t.chamber }}</td><td>{{ t.where }}</td><td><span class="chip {{ {'Democrat': 'D', 'Republican': 'R', 'Independent': 'I'}.get(t.party, '') }}">{{ t.party }}</span></td></tr>{% endfor %}</table></div>{% endif %}
+ </div>
+
+ <div>
+  <div class="card"><h3>Follow &amp; contact</h3>
+   {% set soc = links|selectattr(0, 'equalto', 'social')|list %}
+   {% if soc %}<div class="links">{% for g, label, url in soc %}<a class="fchip" href="{{ url }}" rel="noopener noreferrer">{{ label }}</a>{% endfor %}</div>
+   {% else %}<p class="muted">No official social accounts on file.</p>{% endif %}
+   {% if bio %}{% set last = (bio.terms|sort(attribute='start'))|last %}{% if last and facts.office %}
+   <dl class="facts" style="margin-top:.8rem">
+    {% if last.phone %}<dt>Phone</dt><dd>{{ last.phone }}</dd>{% endif %}
+    {% if last.address %}<dt>Office</dt><dd>{{ last.address }}</dd>{% endif %}
+    {% if last.contact_form and last.contact_form.startswith('http') %}<dt>Contact</dt><dd><a href="{{ last.contact_form }}" rel="noopener noreferrer">Contact form</a></dd>{% endif %}
+   </dl>{% endif %}{% endif %}</div>
+  <div class="card"><h3>More reading</h3>
+   <div class="links">{% for g, label, url in links if g == 'reference' %}<a class="fchip" href="{{ url }}" rel="noopener noreferrer">{{ label }}</a>{% endfor %}</div></div>
+  <div class="card"><h3>Short video</h3><p class="muted">Build a 15&ndash;30 second vertical video brief: facts blurb, your script, and a slide presenter.</p>
+   <a class="btn" href="/videos/{{ m.member_id }}">Make a short video &rarr;</a></div>
+  <div class="card"><h3>Their votes</h3><p class="muted">This page is the overview. Every individual vote, with your picks marked, is on the Votes tab.</p>
+   <a class="btn btn-primary" href="/member/{{ m.member_id }}">See all votes &rarr;</a></div>
+ </div>
+</div>
+{% endblock %}

@@ -1,0 +1,9 @@
+venv/
+data/
+__pycache__/
+*.pyc
+.pytest_cache/
+# managed by the Reguard dashboard, not part of this project
+project.json
+agents/
+tasks/

@@ -1,0 +1,16 @@
+{% extends "base.html" %}{% import "_person.html" as person %}{% block title %}{{ m.full_name }} &middot; politracker{% endblock %}{% block body %}
+{{ person.header(m, 'votes') }}
+<div class="stats">
+ <div class="stat"><b>With their party:</b>
+  {% if summary.with_party_pct is not none %}<span class="big">{{ summary.with_party_pct }}%</span> <span class="muted">of their Yea/Nay votes under the current filters went the way most of {% if cmp_party %}the {{ 'Democrats' if cmp_party == "'D'" else 'Republicans' }} (the party they caucus with){% else %}their own party{% endif %} voted</span>{% else %}<span class="muted">n/a</span>{% endif %}</div>
+ <div class="stat"><b>With your picks:</b>
+  {% if picks.pct is not none %}<span class="big">{{ picks.pct }}%</span> <span class="muted">voted the way you want on {{ picks.matched }} of {{ picks.scored }} rated bills they cast a Yea/Nay vote on ({{ picks.rated }} rated in total; procedural votes aren't scored)</span>
+  {% elif picks.rated %}<span class="muted">none of your {{ picks.rated }} rated bills has a scored Yea/Nay vote by {{ m.full_name }} (other chamber, voice vote, or not in office then)</span>
+  {% else %}<span class="muted">give bills a thumbs up or thumbs down on the Votes page and this fills in</span>{% endif %}</div>
+</div>
+<div class="counts">Showing {{ summary.total }} votes under the current filters:
+ {% for p, n in summary.counts.items() %}<span class="chip {{ p.split()[0] }}">{{ p }} {{ n }}</span>{% endfor %}</div>
+{% if topics and by_topic %}<details class="card"><summary>By topic <span class="muted">(Yea/Nay under the current filters; click a topic to filter)</span></summary>
+<div class="table-wrap" style="margin-top:.6rem"><table><tr><th>Topic</th><th>Yea</th><th>Nay</th></tr>{% for name, c in by_topic %}
+<tr><td><a href="?{{ request.args.to_dict() | dictupdate(topic=name, page=1) }}">{{ name }}</a></td><td class="Yea">{{ c.Yea }}</td><td class="Nay">{{ c.Nay }}</td></tr>{% endfor %}</table></div></details>{% endif %}
+{% set member_filter = true %}{% include "_filters.html" %}{% include "_votes_table.html" %}{% endblock %}

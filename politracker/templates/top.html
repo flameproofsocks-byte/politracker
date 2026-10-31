@@ -1,0 +1,48 @@
+{% extends "base.html" %}{% import "_thumbs.html" as st with context %}
+{% block title %}Top bills &middot; politracker{% endblock %}{% block body %}
+<h1>Most interesting bills</h1>
+<div class="muted">A leaderboard of bills that were close, contested, heavily amended or widely cosponsored. Ranked by an interest score built from our own data,
+ not by page views.</div>
+
+<form method="get" class="filters">
+ <label>Year <select name="year"><option value="">All years</option>
+  {% for y in years %}<option value="{{ y }}" {{ 'selected' if year == y }}>{{ y }}</option>{% endfor %}</select></label>
+ <label>Month <select name="month"><option value="">All months</option>
+  {% for n, name in months %}<option value="{{ n }}" {{ 'selected' if month == n }}>{{ name }}</option>{% endfor %}</select></label>
+ <label>Rank by <select name="by">{% for k, (label, _) in rank_by.items() %}<option value="{{ k }}" {{ 'selected' if by == k }}>{{ label }}</option>{% endfor %}</select></label>
+ <button class="btn btn-primary">Show</button>
+ <a class="btn btn-ghost" href="/top?year=&amp;month=" title="Every month we have">All time</a>
+</form>
+
+<h2 style="margin-top:.4rem">{{ period }} <span class="muted" style="font-size:.9rem;font-weight:400">&middot; {{ matched }} bill{{ '' if matched == 1 else 's' }} with votes{% if matched > limit %}, top {{ limit }} shown{% endif %}</span></h2>
+
+<div class="table-wrap"><table class="votes">
+ <tr><th class="rankcol">#</th><th class="starcol">Rating</th><th>Bill</th><th>Date</th><th>Vote</th><th>Interest</th><th>Summary</th></tr>
+ {% for r in rows %}<tr>
+  <td class="rank">{{ loop.index }}</td>
+  <td class="starcol">{{ st.thumbs(r) }}</td>
+  <td class="c-bill"><div class="bill-title" title="{{ r.title }}">{% if r.link_vote_id %}<a href="/vote/{{ r.link_vote_id }}"><b>{{ r.bill_id }}</b></a>{% else %}<b>{{ r.bill_id }}</b>{% endif %} &ndash; {{ r.title }}</div>
+   <div class="why">{% if r.topic %}<span class="pill">{{ r.topic }}</span>{% endif %}{% for why in r.reasons %}<span class="chip">{{ why }}</span>{% endfor %}</div></td>
+  <td class="muted nowrap">{{ r.bill_date }}</td>
+  <td class="nowrap">{% if r.tally and r.link_vote_id %}<a href="/vote/{{ r.link_vote_id }}">{{ r.tally }}</a>{% else %}<span class="muted" title="No vote on the bill itself yet (only procedural votes)">&mdash;</span>{% endif %}</td>
+  <td class="nowrap"><b>{{ r.score }}</b>
+   <div class="scorebar" title="{% for k, w in weights.items() %}{{ labels[k] }} {{ (r.parts[k] * w)|round(1) }}/{{ w }}{{ ' · ' if not loop.last }}{% endfor %}"><span style="width:{{ r.score }}%"></span></div></td>
+  <td class="brief">{% if r.brief %}<div class="clamp" title="Click to expand">{{ r.brief }}</div>{% else %}<span class="muted">&mdash;</span>{% endif %}</td>
+ </tr>{% else %}<tr><td colspan="7" class="muted">No bills with votes in that period.</td></tr>{% endfor %}
+</table></div>
+
+<details class="card"><summary>How is the interest score worked out?</summary>
+ <p>Each bill gets 0&ndash;100 points. Hover a score to see its breakdown.</p>
+ <table class="timeline">
+  <tr><td><b>Close vote</b> ({{ weights.close }})</td><td>How narrow the closest passage vote was. A tie is full marks, a unanimous vote is zero.</td></tr>
+  <tr><td><b>Party-line</b> ({{ weights.partisan }})</td><td>How far apart Democrats and Republicans were on passage (both chambers pooled).</td></tr>
+  <tr><td><b>Amendments</b> ({{ weights.amended }})</td><td>How many amendments were filed (log-scaled, so the first few count most).</td></tr>
+  <tr><td><b>Roll calls</b> ({{ weights.votes }})</td><td>How many recorded votes the bill needed: cloture, amendments, motions.</td></tr>
+  <tr><td><b>Cosponsors</b> ({{ weights.cosponsors }})</td><td>How many members signed on as cosponsors (log-scaled).</td></tr>
+  <tr><td><b>Became law</b> ({{ weights.law }})</td><td>Signed into law.</td></tr>
+ </table>
+ <p class="muted">Congress.gov publishes a &ldquo;most viewed bills&rdquo; list, but it can't be read automatically (the site blocks bots), so view counts aren't used here.
+  You can still <a href="https://www.congress.gov/most-viewed-bills" rel="noopener noreferrer">open it in your browser</a>. A bill's date is its latest final-passage vote (or its latest vote if it never had one).
+  The weights live in <code>politracker/interest.py</code>.</p>
+</details>
+{% endblock %}

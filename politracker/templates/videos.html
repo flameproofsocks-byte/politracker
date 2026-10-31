@@ -1,0 +1,25 @@
+{% extends "base.html" %}{% block title %}Videos &middot; politracker{% endblock %}{% block body %}
+<h1>Short videos</h1>
+<div class="muted">Build a {{ target[0] }}&ndash;{{ target[1] }} second vertical video brief for any politician: a fact blurb from their recorded votes, a place for your script, and a
+ 9:16 slide presenter you can screen-record or export as images.</div>
+
+<section class="card"><h3>Start a brief</h3>
+ <div class="search" style="max-width:none;margin:0">
+  <input id="video-search" placeholder="Start typing a politician's name, e.g. Cantwell" data-suggest="video-suggest" data-link="/videos/" autofocus aria-label="Politician name">
+  <div id="video-suggest" class="suggest" style="right:0" hidden></div>
+ </div>
+</section>
+
+<h2>Your briefs</h2>
+{% if briefs %}
+<div class="table-wrap"><table>
+ <tr><th>Politician</th><th>Script</th><th>Updated</th><th></th></tr>
+ {% for b in briefs %}{% set status = 'empty' if b.words == 0 else 'short' if b.seconds < target[0] else 'long' if b.seconds > target[1] else 'good' %}<tr>
+  <td><a href="/videos/{{ b.member_id }}"><b>{{ b.full_name }}</b></a> <span class="chip {{ b.party }}">{{ b.party }}</span> <span class="muted">{{ b.chamber }} &middot; {{ b.state }}</span></td>
+  <td>{% if b.words %}{{ b.words }} words &middot; about {{ b.seconds }}s <span class="chip {{ 'Yea' if status == 'good' else 'Nay' if status in ('short', 'long') }}">{{ {'good': 'on target', 'short': 'too short', 'long': 'too long'}[status] }}</span>{% else %}<span class="muted">no script yet</span>{% endif %}</td>
+  <td class="muted nowrap">{{ b.updated_at[:10] }}</td>
+  <td class="nowrap"><a class="btn" href="/videos/{{ b.member_id }}">Edit</a> <a class="btn" href="/videos/{{ b.member_id }}/present" target="_blank" rel="noopener">Present</a></td>
+ </tr>{% endfor %}
+</table></div>
+{% else %}<div class="card muted">No briefs yet. Search for a politician above, or open anyone's summary page and use <b>Make a short video</b>.</div>{% endif %}
+{% endblock %}
